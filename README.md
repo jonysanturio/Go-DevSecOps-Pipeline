@@ -1,7 +1,7 @@
 # GoStock: Hexagonal Inventory API
 
-![Build Status](https://github.com/TU_USUARIO/TU_REPO/actions/workflows/ci.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/TU_USUARIO/TU_REPO)](https://goreportcard.com/report/github.com/TU_USUARIO/TU_REPO)
+[![Go DevSecOps Pipeline](https://github.com/jonysanturio/Go-DevSecOps-Pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/jonysanturio/Go-DevSecOps-Pipeline/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jonysanturio/Go-DevSecOps-Pipeline)](https://goreportcard.com/report/github.com/jonysanturio/Go-DevSecOps-Pipeline)
 [![Security Rating](https://img.shields.io/badge/Security-A+-green)](https://github.com/securego/gosec)
 
 API de alto rendimiento para gestión de inventario, diseñada con principios de **Arquitectura Hexagonal**, **DevSecOps** y **Clean Code**.
