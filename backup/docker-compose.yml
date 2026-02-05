@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+  # 1. Aplicacion
+  app-jony:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+    # 2. Base de datos
+  db:
+    image: postgres:15-alpine # Version segura
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432" # Puerto estándar de Postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persistencia (para no perder datos al apagar)
+    # 3. Definir los volumenes
+volumes:
+  postgres_data:
+
+
+
+
+
+
+
+
+
+#app-jony: # Nombre interno del servicio
+#    build: . # "Construye la imagen usando el Dockerfile de aquí mismo"
+#    volumes:
+#      - .:/app  # MAGIA: "Lo que cambie en mi carpeta actual (.), refléjalo en (/app) dentro del contenedor"
+
