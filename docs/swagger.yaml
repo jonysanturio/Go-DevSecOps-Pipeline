@@ -1,0 +1,162 @@
+basePath: /
+definitions:
+  product.CreateProductRequest:
+    properties:
+      name:
+        example: Laptop Gamer
+        type: string
+      price:
+        example: 1500
+        type: number
+      stock:
+        example: 10
+        type: integer
+    type: object
+  product.Product:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: Coca Cola
+        type: string
+      price:
+        example: 10.5
+        type: number
+      stock:
+        example: 100
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API Hexagonal para gestión de inventario con métricas y seguridad.
+  title: GoStock Inventory API
+  version: "1"
+paths:
+  /products:
+    get:
+      description: Obtiene todos los productos registrados
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/product.Product'
+            type: array
+        "500":
+          description: Error interno
+          schema:
+            type: string
+      summary: Listar productos
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Guarda un producto con nombre, precio y stock en la base de datos
+      parameters:
+      - description: Datos del producto
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/product.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/product.Product'
+        "400":
+          description: Datos inválidos
+          schema:
+            type: string
+        "500":
+          description: Error interno
+          schema:
+            type: string
+      summary: Crear un producto
+      tags:
+      - products
+  /products/{id}:
+    delete:
+      description: Borra un producto del inventario permanentemente
+      parameters:
+      - description: ID del Producto
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: ID Inválido
+          schema:
+            type: string
+      summary: Eliminar producto
+      tags:
+      - products
+    get:
+      description: Busca un producto específico por su ID
+      parameters:
+      - description: ID del Producto
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/product.Product'
+        "400":
+          description: ID Inválido
+          schema:
+            type: string
+        "404":
+          description: Producto no encontrado
+          schema:
+            type: string
+      summary: Obtener un producto
+      tags:
+      - products
+    put:
+      consumes:
+      - application/json
+      description: Actualiza los datos de un producto por su ID
+      parameters:
+      - description: ID del Producto
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Nuevos datos
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/product.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/product.Product'
+        "400":
+          description: Datos inválidos
+          schema:
+            type: string
+      summary: Actualizar producto
+      tags:
+      - products
+swagger: "2.0"

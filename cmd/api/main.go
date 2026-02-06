@@ -10,8 +10,15 @@ import (
 	"github.com/jony/inventario/internal/platform/postgres"
 	"github.com/jony/inventario/internal/product"
 	_ "github.com/lib/pq"
+    _ "github.com/jony/inventario/docs"
+    httpSwagger "github.com/swaggo/http-swagger"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
 )
-
+// @title   GoStock Inventory API
+// @version 1
+// @description API Hexagonal para gestión de inventario con métricas y seguridad.
+// @host    localhost:8080
+// @BasePath    /
 func main() {
     // CORRECCIÓN 2: Es Getenv (Get Environment)
     dbUser := os.Getenv("DB_USER")
@@ -48,6 +55,11 @@ func main() {
         }
     })
 
+    //Swagger
+    http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+    //Prometheus
+    http.Handle("/metrics", promhttp.Handler())
+    
     fmt.Println("SERVIDOR CORRIENDO EN PUERTO 8080")
     log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }

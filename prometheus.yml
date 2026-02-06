@@ -1,0 +1,7 @@
+global:
+  scrape_interval: "5s" # Lee metrica cada 5 segundos
+
+scrape_configs:
+  - job_name: 'go.inventory-app'
+    static_configs:
+      - targets: ['app-jony:8080']

@@ -64,3 +64,18 @@ func (s *Service)Update(id int, name string, price float64, stock int)(*domain.P
 func (s *Service)Delete(id int)error{
 	return s.repo.Delete(id)
 }
+
+// CreateProductRequest es lo que manda el usuario (Input)
+type CreateProductRequest struct {
+    Name  string  `json:"name" example:"Laptop Gamer"`
+    Price float64 `json:"price" example:"1500.00"`
+    Stock int     `json:"stock" example:"10"`
+}
+
+// Product es lo que devolvemos (Output)
+type Product struct {
+    ID    int     `json:"id" example:"1"`
+    Name  string  `json:"name" example:"Coca Cola"`
+    Price float64 `json:"price" example:"10.50"`
+    Stock int     `json:"stock" example:"100"`
+}

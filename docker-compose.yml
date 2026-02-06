@@ -1,8 +1,10 @@
 version: '3.8'
-#Aplicacion
+
 services:
+  # APLICACIÓN
   app-jony:
     build: .
+    container_name: app-jony 
     ports: 
       - "8080:8080"
     volumes: 
@@ -14,7 +16,8 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
       - JWT_SECRET=${JWT_SECRET}
-#Base de datos
+
+  # BASE DE DATOS
   db:
     image: postgres:15-alpine
     environment:
@@ -25,6 +28,28 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  #PROMETHEUS
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app-jony
+
+  #GRAFANA
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=secret
+    depends_on:
+      - prometheus
 
 volumes:
   postgres_data:
