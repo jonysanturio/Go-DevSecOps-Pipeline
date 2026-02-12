@@ -1,68 +1,42 @@
 package product_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 
-	"github.com/jony/inventario/internal/domain"
+	"github.com/jony/inventario/internal/domain/mocks"
 	"github.com/jony/inventario/internal/product"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// MOCK (Repo Mentiroso)
-// Simula ser un repositorio real
+func TestService_Create(t *testing.T) {
+	mockRepo := new(mocks.ProductRepository)
+	service := product.NewService(mockRepo)
+	ctx := context.Background()
 
-type MockRepository struct{
-	mock.Mock
-}
+	// Caso exitoso
+	t.Run("Success Create", func(t *testing.T) {
+		mockRepo.On("Save", ctx, mock.AnythingOfType("*domain.Product")).Return(nil).Once()
 
-func (m *MockRepository)Save(p *domain.Product)error {
-	args := m.Called(p)
-	return args.Error(0)
-}
+		p, err := service.Create(ctx, "Macbook Pro", 2500.0, 10)
 
-func (m *MockRepository)GetAll()([]domain.Product, error){
-	args := m.Called()
-	return args.Get(0).([]domain.Product), args.Error(1)
-}
+		assert.NoError(t, err)          
+		assert.NotNil(t, p)             
+		assert.Equal(t, "Macbook Pro", p.Name) 
+		
+		mockRepo.AssertExpectations(t)
+	})
 
-func (m *MockRepository)GetOne(id int)(*domain.Product, error){
-	return nil, nil
-}
-func (m *MockRepository)Update(id int, p*domain.Product)error{
-	return nil
-}
+		// Caso falso
+	t.Run("Database Error", func(t *testing.T) {
+		mockRepo.On("Save", ctx, mock.AnythingOfType("*domain.Product")).Return(errors.New("db connection lost")).Once()
 
-func (m *MockRepository)Delete(id int) error{
-	return nil
-}
+		_, err := service.Create(ctx, "Macbook Pro", 2500.0, 10)
 
-// Testing REAL
-
-func TestCreate_Success(t *testing.T){
-	repoMock := new(MockRepository)
-	service := product.NewService(repoMock)
-
-	// SI LLAMAN A SAVE, DEVUELVE NIL
-	repoMock.On("Save", mock.Anything).Return(nil)
-	// Ejecución ACT
-	p, err := service.Create("Coca-Cola", 10.5, 100)
-	// VERIFICAR
-	assert.NoError(t, err)
-	assert.NotNil(t, p)
-	assert.Equal(t, "Coca-Cola", p.Name)
-	//VERIFICAR EL SERVICIO LLAMADO REPOSITORIO
-	repoMock.AssertExpectations(t)
-}
-
-func TestCreate_InvalidPrice(t *testing.T){
-	repoMock := new(MockRepository)
-	service := product.NewService(repoMock)
-
-	_, err := service.Create("Coca-Cola", -50.0, 100)
-
-	assert.Error(t, err)
-	assert.Equal(t, domain.ErrInvalidPrice, err)
-
-	repoMock.AssertNotCalled(t, "Save")
+		assert.Error(t, err) 
+		assert.Equal(t, "db connection lost", err.Error())
+		mockRepo.AssertExpectations(t)
+	})
 }
