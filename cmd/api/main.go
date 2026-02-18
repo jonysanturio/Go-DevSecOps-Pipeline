@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	// Importamos nuestros paquetes internos
 	"github.com/jony/inventario/internal/platform/postgres"
 	"github.com/jony/inventario/internal/product"
 	_ "github.com/lib/pq"
@@ -20,13 +19,11 @@ import (
 // @host    localhost:8080
 // @BasePath    /
 func main() {
-    // CORRECCIÓN 2: Es Getenv (Get Environment)
     dbUser := os.Getenv("DB_USER")
     dbPass := os.Getenv("DB_PASSWORD")
     dbName := os.Getenv("DB_NAME")
     connStr := fmt.Sprintf("postgres://%s:%s@db:5432/%s?sslmode=disable", dbUser, dbPass, dbName)
 
-    // CORRECCIÓN 3: Es sql.Open (del paquete sql)
     db, err := sql.Open("postgres", connStr)
     if err != nil {
         log.Fatal(err)
@@ -36,7 +33,6 @@ func main() {
     service := product.NewService(repo)
     handler := NewProductHandler(service)
 
-    // CORRECCIÓN 4: Es HandleFunc (función), no HandlerFunc (tipo)
     http.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
         if r.Method == http.MethodPost {
             handler.CreateProduct(w, r)
@@ -55,9 +51,9 @@ func main() {
         }
     })
 
-    //Swagger
+
     http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
-    //Prometheus
+
     http.Handle("/metrics", promhttp.Handler())
     
     fmt.Println("SERVIDOR CORRIENDO EN PUERTO 8080")
