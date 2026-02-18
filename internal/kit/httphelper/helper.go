@@ -16,5 +16,7 @@ func Decode[T any](r *http.Request) (T, error) {
 func Encode(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		return
+	}
 }
