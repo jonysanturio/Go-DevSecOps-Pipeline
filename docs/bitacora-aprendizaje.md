@@ -5,7 +5,7 @@ Este documento registra los cambios del proyecto y la lógica detrás de cada un
 ## Cómo fluye una solicitud
 
 1. `cmd/api/main.go` registra la ruta HTTP.
-2. Un método de `ProductHandler` interpreta ruta y cuerpo, y convierte errores a códigos HTTP.
+2. Un método de `ProductHandler` interpreta la ruta y el cuerpo, y convierte errores a códigos HTTP.
 3. El servicio valida reglas de negocio y prepara el producto.
 4. El servicio usa la interfaz `domain.ProductRepository`.
 5. `internal/platform/postgres/product_repository.go` implementa esa interfaz y ejecuta SQL parametrizado contra PostgreSQL.
@@ -44,13 +44,19 @@ El usuario agregó la condición `id <= 0` después de `strconv.Atoi`. `Atoi` ve
 
 **Casos:** texto no numérico → 400; cero o número negativo → 400; ID positivo inexistente → 404; ID positivo existente → 200.
 
-Nota de formato Go: escribir `id <= 0` con espacios alrededor del operador, como lo produciría `gofmt`.
+### 4. ID positivo en `UpdateProduct` y `DeleteProduct`
+
+**Archivo:** `cmd/api/handler.go`
+
+El usuario agregó la comprobación `<= 0` después de `strconv.Atoi` en ambas operaciones. La validación ocurre antes de llamar al servicio; en actualización también se hace antes de decodificar el cuerpo.
+
+**Casos:** ID no numérico → 400 por error de conversión; cero o negativo → 400 por ID fuera del rango válido; ID positivo que no existe → 404; ID válido existente → actualización 200 o eliminación 204.
+
+**Detalle pendiente:** el mensaje agregado en `UpdateProduct` dice `cer`; corregirlo a `cero`. En `GetOneProduct`, escribir el operador con formato `id <= 0`.
 
 ## Siguiente paso
 
-Aplicar la misma validación de ID positivo en `UpdateProduct` y `DeleteProduct`. Actualmente ambas funciones convierten el ID a entero, pero todavía no rechazan cero ni valores negativos antes de llamar al servicio.
-
-Después revisaremos si conviene extraer la conversión y validación repetida a una función auxiliar. Primero practicamos el mismo caso en cada operación; luego evaluamos cómo evitar duplicación sin ocultar el flujo.
+Corregir esos dos detalles de texto y formato. Luego revisaremos una posible función auxiliar para no repetir la extracción, conversión y validación del ID en tres handlers. La extracción tiene sentido una vez que quede claro qué validaciones comparten las operaciones.
 
 ## Temas pendientes para las siguientes etapas
 
@@ -63,3 +69,4 @@ Después revisaremos si conviene extraer la conversión y validación repetida a
 ## Registro
 
 - 2026-10-02: documentados los cambios iniciales del repositorio, la validación del cuerpo de actualización y la validación de ID en lectura.
+- 2026-10-02: registrada la validación de ID positivo que el usuario agregó a actualización y eliminación.
