@@ -87,6 +87,10 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID Inválido", http.StatusBadRequest)
 		return
 	}
+	if productID <= 0 {
+		http.Error(w, "ID debe ser mayor a cer", http.StatusBadRequest)
+		return
+	}
 
 	updateReq, err := httphelper.Decode[product.CreateProductRequest](r)
 	if err != nil {
@@ -117,6 +121,10 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "ID Inválido", http.StatusBadRequest)
+		return
+	}
+	if id <= 0 {
+		http.Error(w, "ID debe ser mayor a cero", http.StatusBadRequest)
 		return
 	}
 
