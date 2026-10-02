@@ -52,11 +52,11 @@ El usuario agregó la comprobación `<= 0` después de `strconv.Atoi` en ambas o
 
 **Casos:** ID no numérico → 400 por error de conversión; cero o negativo → 400 por ID fuera del rango válido; ID positivo que no existe → 404; ID válido existente → actualización 200 o eliminación 204.
 
-**Detalle pendiente:** el mensaje agregado en `UpdateProduct` dice `cer`; corregirlo a `cero`. En `GetOneProduct`, escribir el operador con formato `id <= 0`.
+**Revisión:** el mensaje de `UpdateProduct` ya dice `cero`. En `GetOneProduct` todavía falta el espacio de formato: escribir `id <= 0`.
 
 ## Siguiente paso
 
-Corregir esos dos detalles de texto y formato. Luego revisaremos una posible función auxiliar para no repetir la extracción, conversión y validación del ID en tres handlers. La extracción tiene sentido una vez que quede claro qué validaciones comparten las operaciones.
+En curso: el usuario convirtió `parseProductID` en función de paquete, pero todavía no comprueba que el path tenga el prefijo esperado ni que el ID sea positivo, y `GetOneProduct` aún no la usa. Hay además un bloque `if id <= 0` suelto fuera de toda función, lo que impide compilar. Ese chequeo debe devolver un error desde el helper; el handler debe traducirlo a HTTP 400. Después hay que integrar el helper en `GetOneProduct` y reutilizarlo en las otras operaciones.
 
 ## Temas pendientes para las siguientes etapas
 
@@ -70,3 +70,5 @@ Corregir esos dos detalles de texto y formato. Luego revisaremos una posible fun
 
 - 2026-10-02: documentados los cambios iniciales del repositorio, la validación del cuerpo de actualización y la validación de ID en lectura.
 - 2026-10-02: registrada la validación de ID positivo que el usuario agregó a actualización y eliminación.
+- 2026-10-02: comenzó la extracción de parseo de ID en `parseProductID`; quedan pendientes su validación completa y uso en el handler.
+- 2026-10-02: el primer intento del helper quedó incompleto: se detectó un bloque condicional fuera de una función y el helper aún no se conecta a `GetOneProduct`. Se documentó para corregirlo en el siguiente paso.

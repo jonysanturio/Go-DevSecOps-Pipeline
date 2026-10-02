@@ -63,7 +63,7 @@ func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID Inválido", http.StatusBadRequest)
 		return
 	}
-	if id <=0 {
+	if id <= 0{
 		http.Error(w, "ID debe ser mayor que cero", http.StatusBadRequest)
 		return
 	}
@@ -88,7 +88,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if productID <= 0 {
-		http.Error(w, "ID debe ser mayor a cer", http.StatusBadRequest)
+		http.Error(w, "ID debe ser mayor a cero", http.StatusBadRequest)
 		return
 	}
 
