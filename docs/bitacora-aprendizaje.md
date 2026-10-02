@@ -2,73 +2,69 @@
 
 Este documento registra los cambios del proyecto y la lógica detrás de cada uno. La dinámica acordada es que el usuario modifica el código y el asistente explica, revisa y documenta; el asistente no edita código por su cuenta.
 
-## Cómo fluye una solicitud
+## Flujo de una solicitud
 
-1. `cmd/api/main.go` registra la ruta HTTP.
-2. Un método de `ProductHandler` interpreta la ruta y el cuerpo, y convierte errores a códigos HTTP.
-3. El servicio valida reglas de negocio y prepara el producto.
-4. El servicio usa la interfaz `domain.ProductRepository`.
-5. `internal/platform/postgres/product_repository.go` implementa esa interfaz y ejecuta SQL parametrizado contra PostgreSQL.
+1. `cmd/api/main.go` registra rutas HTTP.
+2. `ProductHandler` lee parámetros y cuerpo, valida la entrada HTTP y elige una respuesta.
+3. El servicio aplica reglas de negocio y llama al puerto `domain.ProductRepository`.
+4. El adaptador PostgreSQL implementa ese puerto y ejecuta SQL.
+5. El resultado vuelve por el servicio y el handler lo convierte en una respuesta HTTP.
 
-Esta separación es parte de la arquitectura hexagonal: el servicio depende del puerto (la interfaz), mientras PostgreSQL es un adaptador.
+## Pasos trabajados
 
-## Cambios revisados
-
-### 1. Errores de lectura y escritura en el repositorio
+### 1. Manejo de errores del repositorio
 
 **Archivo:** `internal/platform/postgres/product_repository.go`
 
-- `GetAll` revisa `rows.Err()` después del bucle. `rows.Next()` recorre los resultados, pero un fallo del driver puede aparecer durante esa iteración.
-- `GetOne` traduce `sql.ErrNoRows` a `domain.ErrProductNotFound`. Así el dominio no necesita conocer el detalle de PostgreSQL.
-- `Update` usa el `id` recibido como argumento y placeholders SQL (`$1` a `$4`). Los valores del usuario no se concatenan dentro del SQL.
-- `Update` y `Delete` revisan `RowsAffected()`. Cero filas afectadas significa que no existía ese producto y se devuelve `ErrProductNotFound`.
-- El handler usa `errors.Is` para convertir ese error en HTTP 404. Otros errores de persistencia se traducen a HTTP 500.
+- `GetAll` revisa `rows.Err()` después del bucle porque un error del driver puede aparecer durante la iteración.
+- `GetOne` traduce `sql.ErrNoRows` a `domain.ErrProductNotFound`, separando el dominio de detalles de PostgreSQL.
+- `Update` usa el ID recibido como argumento y placeholders SQL. Los datos del usuario no se concatenan a la consulta.
+- `Update` y `Delete` revisan `RowsAffected()`; cero filas significa que el producto no existe.
+- Los handlers convierten `ErrProductNotFound` en 404 y otros errores internos en 500.
 
-**Casos:** producto inexistente → 404; fallo interno de base de datos → 500; operación válida → 200 para lectura/actualización y 204 para eliminación.
-
-### 2. Validación del cuerpo en `UpdateProduct`
+### 2. Validación del cuerpo de actualización
 
 **Archivo:** `cmd/api/handler.go`
 
-El usuario agregó `updateReq.Validate()` después de decodificar el JSON. Si la validación falla, el handler responde 400 y hace `return`; por eso la solicitud no llega al servicio.
+El usuario agregó `updateReq.Validate()` a `UpdateProduct`, igual que en creación. Una solicitud JSON mal formada o con valores inválidos recibe 400 y no llega al servicio.
 
-El patrón `if err := ...; err != nil` declara una variable `err` cuyo alcance se limita a ese `if`. En este caso, la validación comparte el método con el flujo de creación.
+El patrón `if err := ...; err != nil` crea un error de alcance local y termina temprano con `return`.
 
-**Casos:** JSON mal formado → 400; nombre o valores fuera de las reglas de `Validate` → 400; solicitud válida → continúa al servicio.
-
-### 3. ID positivo en `GetOneProduct`
+### 3. Validación del ID y función común
 
 **Archivo:** `cmd/api/handler.go`
 
-El usuario agregó la condición `id <= 0` después de `strconv.Atoi`. `Atoi` verifica que el texto se pueda convertir a entero; la nueva condición valida que el entero tenga sentido como ID.
+El usuario agregó validación de ID positivo en las operaciones. Después creó `parseProductID(path string)`, que verifica el prefijo `/products/`, extrae el sufijo, lo convierte con `strconv.Atoi` y devuelve error si no es un entero positivo.
 
-**Casos:** texto no numérico → 400; cero o número negativo → 400; ID positivo inexistente → 404; ID positivo existente → 200.
+Los tres handlers llaman ahora al helper. Esto mantiene una sola regla para GET, PUT y DELETE. El handler convierte el error de parseo en 400; un ID positivo que no existe sigue resultando en 404 desde el servicio.
 
-### 4. ID positivo en `UpdateProduct` y `DeleteProduct`
+### 4. Respuestas 500 sin detalles internos
 
 **Archivo:** `cmd/api/handler.go`
 
-El usuario agregó la comprobación `<= 0` después de `strconv.Atoi` en ambas operaciones. La validación ocurre antes de llamar al servicio; en actualización también se hace antes de decodificar el cuerpo.
+El usuario cambió las respuestas de error de `CreateProduct` y `GetAllProducts` a mensajes genéricos. Así el cliente no recibe detalles internos de la base de datos. Más adelante agregaremos logging del lado del servidor para conservar esos detalles para diagnóstico.
 
-**Casos:** ID no numérico → 400 por error de conversión; cero o negativo → 400 por ID fuera del rango válido; ID positivo que no existe → 404; ID válido existente → actualización 200 o eliminación 204.
+## Siguiente paso: métodos HTTP no permitidos
 
-**Revisión:** el mensaje de `UpdateProduct` ya dice `cero`. En `GetOneProduct` todavía falta el espacio de formato: escribir `id <= 0`.
+**Archivo:** `cmd/api/main.go`
 
-## Siguiente paso
+El dispatcher de `/products` llama a `GetAllProducts` para cualquier método distinto de POST. En `/products/`, el `switch` no tiene `default`; un método no contemplado puede terminar con una respuesta vacía 200.
 
-En curso: el usuario convirtió `parseProductID` en función de paquete, pero todavía no comprueba que el path tenga el prefijo esperado ni que el ID sea positivo, y `GetOneProduct` aún no la usa. Hay además un bloque `if id <= 0` suelto fuera de toda función, lo que impide compilar. Ese chequeo debe devolver un error desde el helper; el handler debe traducirlo a HTTP 400. Después hay que integrar el helper en `GetOneProduct` y reutilizarlo en las otras operaciones.
+El siguiente cambio será responder 405 Method Not Allowed para métodos no admitidos y agregar el header `Allow` con los métodos válidos para cada ruta. Esto hace que el contrato HTTP sea explícito y evita que DELETE, PATCH u otros métodos se interpreten accidentalmente como una lectura.
 
-## Temas pendientes para las siguientes etapas
+## Temas para etapas siguientes
 
-- Alinear las reglas y los mensajes de `CreateProductRequest.Validate`. La implementación actual permite precio y stock iguales a cero porque comprueba si son menores que cero; los mensajes deben describir esa regla con precisión.
-- Asegurar las reglas de negocio también en el dominio/servicio, no solo en HTTP.
-- Crear el esquema inicial o migraciones de PostgreSQL.
-- Mejorar pruebas unitarias e integración cuando se acuerde ejecutarlas.
-- Fortalecer CI/CD, agregar el frontend y preparar ejercicios de seguridad aislados para esta API.
+- Limitar el tamaño del cuerpo JSON, comprobar Content-Type, rechazar campos desconocidos y contenido JSON adicional.
+- Unificar las respuestas de error en JSON; hoy `http.Error` responde texto plano y los éxitos usan JSON.
+- Agregar logging estructurado y request IDs sin exponer errores internos al cliente.
+- Configurar timeouts del servidor y mantener propagación de `r.Context()` a la base.
+- Alinear validación de DTO, servicio y dominio.
+- Crear migraciones PostgreSQL, reforzar CI/CD, integrar frontend y preparar pruebas de seguridad locales.
+
+No se ejecutaron pruebas ni compilaciones en estos pasos.
 
 ## Registro
 
-- 2026-10-02: documentados los cambios iniciales del repositorio, la validación del cuerpo de actualización y la validación de ID en lectura.
-- 2026-10-02: registrada la validación de ID positivo que el usuario agregó a actualización y eliminación.
-- 2026-10-02: comenzó la extracción de parseo de ID en `parseProductID`; quedan pendientes su validación completa y uso en el handler.
-- 2026-10-02: el primer intento del helper quedó incompleto: se detectó un bloque condicional fuera de una función y el helper aún no se conecta a `GetOneProduct`. Se documentó para corregirlo en el siguiente paso.
+- 2026-10-02: documentados el flujo inicial del repositorio, la validación del cuerpo de actualización y la validación de IDs.
+- 2026-10-02: documentada la reutilización de `parseProductID` en GET, PUT y DELETE.
+- 2026-10-02: documentadas las respuestas genéricas 500 para creación y listado; próximo foco, métodos HTTP no permitidos.
