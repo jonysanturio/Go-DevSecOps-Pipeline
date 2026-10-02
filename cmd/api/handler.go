@@ -57,10 +57,9 @@ func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Path[len("/products/"):]
-	id, err := strconv.Atoi(idStr)
+	id, err := parseProductID(r.URL.Path)
 	if err != nil {
-		http.Error(w, "ID Inválido", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if id <= 0{
@@ -139,3 +138,13 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func parseProductID(path string) (int, error){
+	idStr := path[len("/products/"):]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, errors.New("ID Inválido")
+	}
+	return id, nil 
+}
+
