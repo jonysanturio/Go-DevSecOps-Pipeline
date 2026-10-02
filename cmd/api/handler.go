@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/jony/inventario/internal/domain"
 	"github.com/jony/inventario/internal/kit/httphelper"
@@ -41,7 +42,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	p, err := h.service.Create(r.Context(), req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error creando producto", http.StatusInternalServerError)
 		return
 	}
 	httphelper.Encode(w, http.StatusCreated, p)
@@ -50,7 +51,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 	products, err := h.service.GetAll(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error listando productos", http.StatusInternalServerError)
 		return
 	}
 	httphelper.Encode(w, http.StatusOK, products)
@@ -60,10 +61,6 @@ func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := parseProductID(r.URL.Path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if id <= 0{
-		http.Error(w, "ID debe ser mayor que cero", http.StatusBadRequest)
 		return
 	}
 
@@ -80,14 +77,9 @@ func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Path[len("/products/"):]
-	productID, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "ID Inválido", http.StatusBadRequest)
-		return
-	}
-	if productID <= 0 {
-		http.Error(w, "ID debe ser mayor a cero", http.StatusBadRequest)
+	id, err := parseProductID(r.URL.Path)
+	if err != nil{
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -103,7 +95,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	updateProduct, err := h.service.Update(r.Context(), productID, updateReq)
+	updateProduct, err := h.service.Update(r.Context(), id, updateReq)
 	if err != nil {
 		if errors.Is(err, domain.ErrProductNotFound) {
 			http.Error(w, "Producto no encontrado", http.StatusNotFound)
@@ -116,14 +108,9 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Path[len("/products/"):]
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "ID Inválido", http.StatusBadRequest)
-		return
-	}
-	if id <= 0 {
-		http.Error(w, "ID debe ser mayor a cero", http.StatusBadRequest)
+	id, err := parseProductID(r.URL.Path)
+	if err != nil{
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -140,9 +127,12 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseProductID(path string) (int, error){
-	idStr := path[len("/products/"):]
+	if !strings.HasPrefix(path, "/products/") {
+		return 0, errors.New("Ruta inválida")
+	}
+	idStr := strings.TrimPrefix(path, "/products/")
 	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if err != nil || id <= 0 {
 		return 0, errors.New("ID Inválido")
 	}
 	return id, nil 
