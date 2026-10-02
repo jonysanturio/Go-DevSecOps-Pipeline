@@ -62,7 +62,7 @@ func (_m *ProductRepository) GetAll(ctx context.Context) ([]domain.Product, erro
 	return r0, r1
 }
 
-// GetOne provides a mock function with given fields: ctx, d
+
 func (_m *ProductRepository) GetOne(ctx context.Context, d int) (*domain.Product, error) {
 	ret := _m.Called(ctx, d)
 
