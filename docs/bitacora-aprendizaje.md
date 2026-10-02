@@ -1,0 +1,65 @@
+# Bitácora de aprendizaje: GoStock
+
+Este documento registra los cambios del proyecto y la lógica detrás de cada uno. La dinámica acordada es que el usuario modifica el código y el asistente explica, revisa y documenta; el asistente no edita código por su cuenta.
+
+## Cómo fluye una solicitud
+
+1. `cmd/api/main.go` registra la ruta HTTP.
+2. Un método de `ProductHandler` interpreta ruta y cuerpo, y convierte errores a códigos HTTP.
+3. El servicio valida reglas de negocio y prepara el producto.
+4. El servicio usa la interfaz `domain.ProductRepository`.
+5. `internal/platform/postgres/product_repository.go` implementa esa interfaz y ejecuta SQL parametrizado contra PostgreSQL.
+
+Esta separación es parte de la arquitectura hexagonal: el servicio depende del puerto (la interfaz), mientras PostgreSQL es un adaptador.
+
+## Cambios revisados
+
+### 1. Errores de lectura y escritura en el repositorio
+
+**Archivo:** `internal/platform/postgres/product_repository.go`
+
+- `GetAll` revisa `rows.Err()` después del bucle. `rows.Next()` recorre los resultados, pero un fallo del driver puede aparecer durante esa iteración.
+- `GetOne` traduce `sql.ErrNoRows` a `domain.ErrProductNotFound`. Así el dominio no necesita conocer el detalle de PostgreSQL.
+- `Update` usa el `id` recibido como argumento y placeholders SQL (`$1` a `$4`). Los valores del usuario no se concatenan dentro del SQL.
+- `Update` y `Delete` revisan `RowsAffected()`. Cero filas afectadas significa que no existía ese producto y se devuelve `ErrProductNotFound`.
+- El handler usa `errors.Is` para convertir ese error en HTTP 404. Otros errores de persistencia se traducen a HTTP 500.
+
+**Casos:** producto inexistente → 404; fallo interno de base de datos → 500; operación válida → 200 para lectura/actualización y 204 para eliminación.
+
+### 2. Validación del cuerpo en `UpdateProduct`
+
+**Archivo:** `cmd/api/handler.go`
+
+El usuario agregó `updateReq.Validate()` después de decodificar el JSON. Si la validación falla, el handler responde 400 y hace `return`; por eso la solicitud no llega al servicio.
+
+El patrón `if err := ...; err != nil` declara una variable `err` cuyo alcance se limita a ese `if`. En este caso, la validación comparte el método con el flujo de creación.
+
+**Casos:** JSON mal formado → 400; nombre o valores fuera de las reglas de `Validate` → 400; solicitud válida → continúa al servicio.
+
+### 3. ID positivo en `GetOneProduct`
+
+**Archivo:** `cmd/api/handler.go`
+
+El usuario agregó la condición `id <= 0` después de `strconv.Atoi`. `Atoi` verifica que el texto se pueda convertir a entero; la nueva condición valida que el entero tenga sentido como ID.
+
+**Casos:** texto no numérico → 400; cero o número negativo → 400; ID positivo inexistente → 404; ID positivo existente → 200.
+
+Nota de formato Go: escribir `id <= 0` con espacios alrededor del operador, como lo produciría `gofmt`.
+
+## Siguiente paso
+
+Aplicar la misma validación de ID positivo en `UpdateProduct` y `DeleteProduct`. Actualmente ambas funciones convierten el ID a entero, pero todavía no rechazan cero ni valores negativos antes de llamar al servicio.
+
+Después revisaremos si conviene extraer la conversión y validación repetida a una función auxiliar. Primero practicamos el mismo caso en cada operación; luego evaluamos cómo evitar duplicación sin ocultar el flujo.
+
+## Temas pendientes para las siguientes etapas
+
+- Alinear las reglas y los mensajes de `CreateProductRequest.Validate`. La implementación actual permite precio y stock iguales a cero porque comprueba si son menores que cero; los mensajes deben describir esa regla con precisión.
+- Asegurar las reglas de negocio también en el dominio/servicio, no solo en HTTP.
+- Crear el esquema inicial o migraciones de PostgreSQL.
+- Mejorar pruebas unitarias e integración cuando se acuerde ejecutarlas.
+- Fortalecer CI/CD, agregar el frontend y preparar ejercicios de seguridad aislados para esta API.
+
+## Registro
+
+- 2026-10-02: documentados los cambios iniciales del repositorio, la validación del cuerpo de actualización y la validación de ID en lectura.
