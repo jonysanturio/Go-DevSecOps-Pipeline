@@ -48,6 +48,8 @@ func main() {
             handler.UpdateProduct(w, r)
         case http.MethodDelete:
             handler.DeleteProduct(w, r)
+        default:
+            http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
         }
     })
 
