@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/jony/inventario/internal/kit/httphelper" 
+	"github.com/jony/inventario/internal/domain"
+	"github.com/jony/inventario/internal/kit/httphelper"
 	"github.com/jony/inventario/internal/product"
 )
 
@@ -61,10 +63,18 @@ func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID Inválido", http.StatusBadRequest)
 		return
 	}
+	if id <=0 {
+		http.Error(w, "ID debe ser mayor que cero", http.StatusBadRequest)
+		return
+	}
 
 	p, err := h.service.GetOne(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Producto no encontrado", http.StatusNotFound)
+		if errors.Is(err, domain.ErrProductNotFound) {
+			http.Error(w, "Producto no encontrado", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Error buscando producto", http.StatusInternalServerError)
 		return
 	}
 	httphelper.Encode(w, http.StatusOK, p)
@@ -84,9 +94,18 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := updateReq.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 
 	updateProduct, err := h.service.Update(r.Context(), productID, updateReq)
 	if err != nil {
+		if errors.Is(err, domain.ErrProductNotFound) {
+			http.Error(w, "Producto no encontrado", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error actualizando producto", http.StatusInternalServerError)
 		return
 	}
@@ -102,6 +121,10 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.Delete(r.Context(), id); err != nil {
+		if errors.Is(err, domain.ErrProductNotFound) {
+			http.Error(w, "Producto no encontrado", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error eliminando producto", http.StatusInternalServerError)
 		return
 	}
