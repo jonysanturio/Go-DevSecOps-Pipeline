@@ -47,7 +47,14 @@ jobs:
         -   name: Build all packages
             run: go build -mod=readonly ./...
 
-        
+        -   name: Trivy SCA (baseline)
+            uses: aquasecurity/trivy-action@v0.36.0
+            with:
+                scan-type: 'fs'
+                scan-ref: '.'
+                scanners: 'vuln'
+                format: 'table'
+                exit-code: '0'
        
         - name: golangci-lint
           uses: golangci/golangci-lint-action@v6
