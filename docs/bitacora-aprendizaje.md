@@ -68,3 +68,44 @@ No se ejecutaron pruebas ni compilaciones en estos pasos.
 - 2026-10-02: documentados el flujo inicial del repositorio, la validación del cuerpo de actualización y la validación de IDs.
 - 2026-10-02: documentada la reutilización de `parseProductID` en GET, PUT y DELETE.
 - 2026-10-02: documentadas las respuestas genéricas 500 para creación y listado; próximo foco, métodos HTTP no permitidos.
+
+## Incidente: versión de Go y análisis con govulncheck
+
+### 1. Qué estaba configurado
+
+El workflow usaba Go 1.25.7:
+
+```yaml
+go-version: '1.25.7'
+go install golang.org/x/vuln/cmd/govulncheck@latest
+
+Son dos versiones distintas: go-version selecciona el toolchain para el proyecto; @latest selecciona la versión de la herramienta govulncheck.
+
+2. Por qué apareció Go 1.26.8 durante la instalación
+En esa ejecución, @latest resolvió a golang.org/x/vuln@v1.8.0, que requiere Go 1.26 o superior. Por eso el comando go install descargó Go 1.26.8 para instalar govulncheck.
+Ese mensaje no significa que el proyecto se haya actualizado a Go 1.26. La descarga ocurrió para ejecutar la instalación de la herramienta. La selección automática de toolchain de Go puede cambiar la versión usada para un comando cuando el módulo de ese comando requiere una versión posterior. Documentación de toolchains de Go
+
+3. Qué significaban las 17 vulnerabilidades
+El informe indicaba que las vulnerabilidades de la biblioteca estándar estaban presentes en go1.25.7 y que el análisis encontraba rutas desde el programa hasta las funciones afectadas. Por eso govulncheck devolvió un código de salida distinto de cero. Documentación de govulncheck
+El mismo informe mencionó otras vulnerabilidades en paquetes importados y módulos requeridos, pero indicó que no detectó llamadas desde el programa hasta esas vulnerabilidades.
+
+4. Solución aplicada al workflow
+Se actualizó la versión de Go configurada en GitHub Actions:
+    go-version: '1.25.14'
+
+Esto actualiza la biblioteca estándar usada para analizar y compilar la aplicación. No era un cambio de una dependencia de go.mod; las correcciones de la biblioteca estándar llegan mediante una versión parcheada de Go. Go 1.25.14 incluye correcciones de seguridad en varios de los paquetes mencionados por el informe. Historial oficial de versiones de Go
+En una ejecución posterior, el workflow avanzó hasta el paso de gosec. Como los pasos se ejecutan en orden, eso indica que Vulncheck ya había terminado correctamente en esa ejecución.
+
+5. Error local al instalar govulncheck
+El comando corto:
+    go install govulncheck@latest
+
+falló porque govulncheck no es una ruta completa de paquete Go. El comando con la ruta completa es:
+    go install golang.org/x/vuln/cmd/govulncheck@latest
+
+El workflow ya usa esa ruta completa.
+
+6. Pendiente de versionado reproducible
+El workflow todavía usa @latest para govulncheck y version: latest para golangci-lint. Eso permite que la herramienta cambie entre ejecuciones. Como siguiente mejora, fijaremos versiones concretas y compatibles para esas herramientas y registraremos cuándo actualizarlas.
+
+La actualización de `go-version` corrigió la versión de la biblioteca estándar que analiza el pipeline. Queda como trabajo separado fijar govulncheck y golangci-lint para que sus versiones también sean reproducibles.
