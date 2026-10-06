@@ -29,11 +29,17 @@ jobs:
                 govulncheck ./...
 
         -   name: Install gosec
-            run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
-        
-        -   name: Run gosec (SAST)
             run: |
-             "$(go env GOPATH)/bin/gosec" ./...
+                go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+                gosec_bin="$(go env GOBIN)"
+                if [ -z "$gosec_bin" ]; then
+                    gosec_bin="$(go env GOPATH)/bin"
+                fi
+                echo "$gosec_bin" >> "$GITHUB_PATH"
+                test -x "$gosec_bin/gosec"
+
+        -   name: Run gosec (SAST)
+            run: gosec ./...
         
         -   name: Run all Tests
             run: go test -mod=readonly ./...
