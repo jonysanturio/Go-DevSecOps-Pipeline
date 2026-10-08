@@ -15,13 +15,13 @@ type CreateProductRequest struct {
 
 func (r CreateProductRequest) Validate() error {
 	if strings.TrimSpace(r.Name) == "" {
-		return errors.New("El nombre es obligatorio")
+		return errors.New("el nombre es obligatorio")
 	}
 	if r.Price < 0 {
-		return errors.New("El precio debe ser mayor a cero")
+		return errors.New("el precio debe ser mayor a cero")
 	}
 	if r.Stock < 0 {
-		return errors.New("Debe tener al menos un stock")
+		return errors.New("el stock no puede ser negativo")
 	}
 	return nil
 }

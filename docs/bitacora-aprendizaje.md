@@ -68,3 +68,8 @@ No se ejecutaron pruebas ni compilaciones en estos pasos.
 - 2026-10-02: documentados el flujo inicial del repositorio, la validación del cuerpo de actualización y la validación de IDs.
 - 2026-10-02: documentada la reutilización de `parseProductID` en GET, PUT y DELETE.
 - 2026-10-02: documentadas las respuestas genéricas 500 para creación y listado; próximo foco, métodos HTTP no permitidos.
+
+## Trivy Security en Golang
+
+
+Remediación SCA: Trivy reportó 11 hallazgos en dependencias. go mod why -m y go mod graph mostraron que eran dependencias transitivas. Go rechazó la primera combinación de versiones porque x/mod requería una versión más nueva de x/net, que a su vez requería una más nueva de x/sys. Al actualizar x/mod, Go resolvió el grafo y elevó también x/net, x/sys, x/tools, x/sync y la directiva mínima de Go a 1.25.0. go mod tidy -diff quedó limpio; tests, build y govulncheck pasaron, y gosec reportó cero issues. Pendiente: revisar el nuevo informe de Trivy en GitHub.
