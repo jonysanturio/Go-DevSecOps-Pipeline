@@ -21,7 +21,7 @@ type ProductService interface {
 }
 
 type ProductHandler struct {
-	service ProductService 
+	service ProductService
 }
 
 func NewProductHandler(service ProductService) *ProductHandler {
@@ -78,7 +78,7 @@ func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := parseProductID(r.URL.Path)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -94,7 +94,6 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	updateProduct, err := h.service.Update(r.Context(), id, updateReq)
 	if err != nil {
 		if errors.Is(err, domain.ErrProductNotFound) {
@@ -109,7 +108,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := parseProductID(r.URL.Path)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -126,7 +125,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func parseProductID(path string) (int, error){
+func parseProductID(path string) (int, error) {
 	if !strings.HasPrefix(path, "/products/") {
 		return 0, errors.New("ruta inválida")
 	}
@@ -135,6 +134,5 @@ func parseProductID(path string) (int, error){
 	if err != nil || id <= 0 {
 		return 0, errors.New("ID Inválido")
 	}
-	return id, nil 
+	return id, nil
 }
-
