@@ -59,20 +59,20 @@ func main() {
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-	
-        if _, err := fmt.Fprintln(w, "Server is running and healthy"); err != nil {
-            log.Printf("error escribiendo la respuesta de /health: %v", err)
-}
+
+		if _, err := fmt.Fprintln(w, "Server is running and healthy"); err != nil {
+			log.Printf("error escribiendo la respuesta de /health: %v", err)
+		}
 	})
 
 	server := &http.Server{
-		Addr:               ":8080",
-		Handler:            nil,
+		Addr:              ":8080",
+		Handler:           nil,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:        15 * time.Second,
-		WriteTimeout:       30 * time.Second,
-		IdleTimeout:        60 * time.Second,
-		MaxHeaderBytes:     1 << 20,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 	log.Fatal(server.ListenAndServe())
 }
