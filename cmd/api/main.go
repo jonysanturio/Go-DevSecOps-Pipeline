@@ -59,7 +59,10 @@ func main() {
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintln(w, "Server is running and healthy")
+	
+        if _, err := fmt.Fprintln(w, "Server is running and healthy"); err != nil {
+            log.Printf("error escribiendo la respuesta de /health: %v", err)
+}
 	})
 
 	server := &http.Server{
