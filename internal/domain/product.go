@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	ErrProductNotFound = errors.New("Product Not Found")
-	ErrInvalidPrice = errors.New("Price cannot be negative")
+	ErrProductNotFound = errors.New("product not found")
+	ErrInvalidPrice = errors.New("price cannot be negative")
 )
 
 
