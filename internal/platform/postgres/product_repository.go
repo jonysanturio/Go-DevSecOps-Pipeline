@@ -28,16 +28,16 @@ func (r *Repository) Save(ctx context.Context, p *domain.Product) error {
 }
 
 
-func (r *Repository) GetAll(ctx context.Context) ([]domain.Product, error) {
+func (r *Repository) GetAll(ctx context.Context) (products []domain.Product, retErr error) {
 	query := "SELECT id, name, price, stock FROM products"
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching products: %w", err)
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
-			fmt.Printf("error closing rows: %v\n", err)
-		}
+    	if closeErr := rows.Close(); closeErr != nil {
+        	retErr = errors.Join(retErr, fmt.Errorf("close product rows: %w", closeErr))
+    	}
 	}()
 
 	var products []domain.Product
