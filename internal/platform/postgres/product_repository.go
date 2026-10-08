@@ -34,7 +34,11 @@ func (r *Repository) GetAll(ctx context.Context) ([]domain.Product, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error fetching products: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			fmt.Printf("error closing rows: %v\n", err)
+		}
+	}()
 
 	var products []domain.Product
 	for rows.Next() {
