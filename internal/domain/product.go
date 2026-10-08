@@ -1,35 +1,31 @@
 package domain
 
 import (
-	"errors"
 	"context"
+	"errors"
 )
 
 var (
 	ErrProductNotFound = errors.New("product not found")
-	ErrInvalidPrice = errors.New("price cannot be negative")
+	ErrInvalidPrice    = errors.New("price cannot be negative")
 )
 
-
 type Product struct {
-	ID		int 	`json:"id"`
-	Name	string	`json:"name"`
-	Price	float64	`json:"price"`
-	Stock	int		`json:"stock"` 
+	ID    int     `json:"id"`
+	Name  string  `json:"name"`
+	Price float64 `json:"price"`
+	Stock int     `json:"stock"`
 }
 
-
-func (p *Product) Validate() error{
-	if p.Name == ""{
-	return errors.New("Product name is required")
+func (p *Product) Validate() error {
+	if p.Name == "" {
+		return errors.New("Product name is required")
 	}
 	if p.Price < 0 {
 		return ErrInvalidPrice
 	}
 	return nil
 }
-
-
 
 type ProductRepository interface {
 	Save(ctx context.Context, p *Product) error
