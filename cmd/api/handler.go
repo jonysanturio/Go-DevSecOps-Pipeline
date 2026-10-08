@@ -128,7 +128,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 func parseProductID(path string) (int, error){
 	if !strings.HasPrefix(path, "/products/") {
-		return 0, errors.New("Ruta inválida")
+		return 0, errors.New("ruta inválida")
 	}
 	idStr := strings.TrimPrefix(path, "/products/")
 	id, err := strconv.Atoi(idStr)
