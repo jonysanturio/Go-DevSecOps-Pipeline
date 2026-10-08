@@ -21,7 +21,7 @@ func (r CreateProductRequest) Validate() error {
 		return errors.New("el precio debe ser mayor a cero")
 	}
 	if r.Stock < 0 {
-		return errors.New("el stock debe ser mayor a cero")
+		return errors.New("el stock no puede ser negativo")
 	}
 	return nil
 }

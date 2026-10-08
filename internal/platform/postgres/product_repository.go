@@ -17,7 +17,6 @@ func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
-
 func (r *Repository) Save(ctx context.Context, p *domain.Product) error {
 	query := "INSERT INTO products (name, price, stock) VALUES ($1, $2, $3) RETURNING id"
 	err := r.db.QueryRowContext(ctx, query, p.Name, p.Price, p.Stock).Scan(&p.ID)
@@ -27,7 +26,6 @@ func (r *Repository) Save(ctx context.Context, p *domain.Product) error {
 	return nil
 }
 
-
 func (r *Repository) GetAll(ctx context.Context) (products []domain.Product, retErr error) {
 	query := "SELECT id, name, price, stock FROM products"
 	rows, err := r.db.QueryContext(ctx, query)
@@ -35,12 +33,11 @@ func (r *Repository) GetAll(ctx context.Context) (products []domain.Product, ret
 		return nil, fmt.Errorf("error fetching products: %w", err)
 	}
 	defer func() {
-    	if closeErr := rows.Close(); closeErr != nil {
-        	retErr = errors.Join(retErr, fmt.Errorf("close product rows: %w", closeErr))
-    	}
+		if closeErr := rows.Close(); closeErr != nil {
+			retErr = errors.Join(retErr, fmt.Errorf("close product rows: %w", closeErr))
+		}
 	}()
 
-	var products []domain.Product
 	for rows.Next() {
 		var p domain.Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Stock); err != nil {
@@ -56,7 +53,7 @@ func (r *Repository) GetAll(ctx context.Context) (products []domain.Product, ret
 
 func (r *Repository) GetOne(ctx context.Context, id int) (*domain.Product, error) {
 	query := "SELECT id, name, price, stock FROM products WHERE id = $1"
-	
+
 	row := r.db.QueryRowContext(ctx, query, id)
 
 	var p domain.Product
