@@ -59,7 +59,7 @@ func main() {
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Servidor Corriendo correctamente")
+		_, _ = fmt.Fprintln(w, "Server is running and healthy")
 	})
 
 	server := &http.Server{
