@@ -13,7 +13,9 @@ jobs:
 
         steps:
         -   name: Checkout code 
-            uses: actions/checkout@v4
+            uses: actions/checkout@v6
+            with: 
+             fetch-depth: 0
 
         -   name: Set up Go
             uses: actions/setup-go@v5
@@ -62,10 +64,7 @@ jobs:
             version: v2.14.0
             args: --timeout=5m
 
-        - name: Checkout code
-          uses: actions/checkout@v6
-          with: 
-            fetch-depth: 0
+
         
         - name: Detect secrets
           uses: gitleaks/gitleaks-action@v3
