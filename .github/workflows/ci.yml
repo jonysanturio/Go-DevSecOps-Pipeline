@@ -44,7 +44,7 @@ jobs:
                 test -x "$gosec_bin/gosec"
 
         -   name: Run gosec (SAST)
-            run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.1
+            run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.1-0.20261009120814-7b1b5cebe007
         
         -   name: Run all Tests
             run: go test -mod=readonly ./...
