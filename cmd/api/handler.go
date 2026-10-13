@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,7 +22,7 @@ type ProductService interface {
 }
 
 type ProductHandler struct {
-	service ProductService 
+	service ProductService
 }
 
 func NewProductHandler(service ProductService) *ProductHandler {
@@ -51,6 +52,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 	products, err := h.service.GetAll(r.Context())
 	if err != nil {
+		log.Printf("Error listando productos: %v", err)
 		http.Error(w, "Error listando productos", http.StatusInternalServerError)
 		return
 	}
@@ -66,6 +68,7 @@ func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
 
 	p, err := h.service.GetOne(r.Context(), id)
 	if err != nil {
+		log.Printf("Error buscando producto: %v", err)
 		if errors.Is(err, domain.ErrProductNotFound) {
 			http.Error(w, "Producto no encontrado", http.StatusNotFound)
 			return
@@ -78,7 +81,7 @@ func (h *ProductHandler) GetOneProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := parseProductID(r.URL.Path)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -94,7 +97,6 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	updateProduct, err := h.service.Update(r.Context(), id, updateReq)
 	if err != nil {
 		if errors.Is(err, domain.ErrProductNotFound) {
@@ -109,7 +111,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := parseProductID(r.URL.Path)
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -126,7 +128,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func parseProductID(path string) (int, error){
+func parseProductID(path string) (int, error) {
 	if !strings.HasPrefix(path, "/products/") {
 		return 0, errors.New("ruta inválida")
 	}
@@ -135,6 +137,5 @@ func parseProductID(path string) (int, error){
 	if err != nil || id <= 0 {
 		return 0, errors.New("ID Inválido")
 	}
-	return id, nil 
+	return id, nil
 }
-

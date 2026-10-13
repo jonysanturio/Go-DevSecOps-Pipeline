@@ -10,12 +10,15 @@ jobs:
     security-and-quality:
         name: Security & Testing Gate
         runs-on: ubuntu-latest
+        
 
         steps:
+
         -   name: Checkout code 
             uses: actions/checkout@v6
             with: 
                 fetch-depth: 0
+        
 
         -   name: Set up Go
             uses: actions/setup-go@v5
@@ -35,7 +38,7 @@ jobs:
 
         -   name: Install gosec
             run: |
-                go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+                go install github.com/securego/gosec/v2/cmd/gosec@v2.29.1-0.20261009120814-7b1b5cebe007
                 gosec_bin="$(go env GOBIN)"
                 if [ -z "$gosec_bin" ]; then
                     gosec_bin="$(go env GOPATH)/bin"
@@ -44,7 +47,7 @@ jobs:
                 test -x "$gosec_bin/gosec"
 
         -   name: Run gosec (SAST)
-            run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.1-0.20261009120814-7b1b5cebe007
+            run: gosec ./...
         
         -   name: Run all Tests
             run: go test -mod=readonly ./...
@@ -52,14 +55,15 @@ jobs:
         -   name: Build all packages
             run: go build -mod=readonly ./...
 
-        -   name: Trivy SCA (baseline)
-            uses: aquasecurity/trivy-action@v0.36.0
-            with:
-                scan-type: 'fs'
-                scan-ref: '.'
-                scanners: 'vuln'
-                format: 'table'
-                exit-code: '0'
+        - name: Trivy SCA (baseline)
+          uses: aquasecurity/trivy-action@v0.36.0
+          with:
+              version: 'v0.75.0'
+              scan-type: 'fs'
+              scan-ref: '.'
+              scanners: 'vuln'
+              format: 'table'
+              exit-code: '0'
        
         - name: golangci-lint
           uses: golangci/golangci-lint-action@v9
@@ -74,3 +78,26 @@ jobs:
           env: 
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             GITLEAKS_ENABLE_COMMENTS: "false"
+
+    container-security:
+        name: Container image scan
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: read
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6
+
+            - name: Build container image
+              run: docker build --pull -t inventario-api:${{ github.sha }} .
+
+            - name: Trivy image scan (baseline)
+              uses: aquasecurity/trivy-action@v0.36.0
+              with:
+                  version: 'v0.75.0'
+                  scan-type: 'image'
+                  image-ref: 'inventario-api:${{ github.sha }}'
+                  scanners: 'vuln'
+                  format: 'table'
+                  exit-code: '0'
