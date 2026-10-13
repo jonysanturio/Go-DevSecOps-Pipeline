@@ -63,7 +63,9 @@ jobs:
               scan-ref: '.'
               scanners: 'vuln'
               format: 'table'
-              exit-code: '0'
+              exit-code: '1'
+              severity: 'HIGH,CRITICAL'
+              ignore-unfixed: 'false'
        
         - name: golangci-lint
           uses: golangci/golangci-lint-action@v9
@@ -92,7 +94,7 @@ jobs:
             - name: Build container image
               run: docker build --pull -t inventario-api:${{ github.sha }} .
 
-            - name: Trivy image scan (baseline)
+            - name: Trivy image security gate
               uses: aquasecurity/trivy-action@v0.36.0
               with:
                   version: 'v0.75.0'
@@ -100,4 +102,6 @@ jobs:
                   image-ref: 'inventario-api:${{ github.sha }}'
                   scanners: 'vuln'
                   format: 'table'
-                  exit-code: '0'
+                  exit-code: '1'
+                  severity: 'HIGH,CRITICAL'
+                  ignore-unfixed: 'false'
