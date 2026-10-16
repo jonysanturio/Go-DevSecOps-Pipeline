@@ -354,3 +354,14 @@ Para cada incremento, conservar el mismo método:
 ## Registro de cambios de esta bitácora
 
 - **2026-10-08:** consolidado el recorrido disponible de la API y la etapa de CI/SAST/SCA; se agregaron fundamentos teóricos, diagnóstico de fallos, evidencias compartidas y especificación de las etapas futuras. No se modificó el código del proyecto al preparar este documento.
+
+
+### Etapa 3: contenedor y esquema reproducible
+
+- Builder actualizado a Go 1.27.2; runtime scratch con UID/GID 65532.
+- API ejecutada con filesystem de solo lectura, cap_drop ALL y no-new-privileges.
+- PostgreSQL publicado en 127.0.0.1:15432 para evitar el puerto 5432 ocupado por PostgreSQL de Windows.
+- Migración 001 aplicada correctamente; versión del esquema: 1.
+- Validación local: /health devuelve 200 y /products devuelve 200 con [].
+- CI incorpora un job independiente para construir y escanear la imagen.
+- Los escaneos Trivy siguen en baseline: exit-code 0. El reporte de imagen está pendiente.

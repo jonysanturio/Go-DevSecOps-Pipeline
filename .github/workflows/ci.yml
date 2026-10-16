@@ -105,3 +105,17 @@ jobs:
                   exit-code: '1'
                   severity: 'HIGH,CRITICAL'
                   ignore-unfixed: 'false'
+
+            - name: Export scanned image
+              run: |
+                  docker image save \
+                    --output "$RUNNER_TEMP/inventario-api.tar" \
+                    "inventario-api:$GITHUB_SHA"
+
+            - name: Upload scanned image
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 
+              with:
+                  name: inventario-api-${{ github.sha }}
+                  path: ${{ runner.temp }}/inventario-api.tar
+                  if-no-files-found: error
+                  retention-days: 7
